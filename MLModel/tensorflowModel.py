@@ -4,14 +4,11 @@
 # the model is represented by the equation h(x) = theta_1 +  theta_2.x_2 + theta_3.x_3
 # the goal is to get the thetas hence the model has learned and can be used for predicting new values
 import os
+import shutil
 import tensorflow as tf
-# Scientific and vector computation for python
 import numpy as np
 
-# Plotting library
-# from matplotlib import pyplot
 
-# Add intercept term to X
 def  featureNormalize(X):
     mu = np.mean(X, axis=0)
     sigma = np.std(X, axis=0)
@@ -37,39 +34,47 @@ def gradientDescentMulti(X, y, theta, alpha, num_iters):
 
 # test example is -> size = 1650 and rooms = 3 price should be $293081
 def createModel(theta):
-    print(tf.__version__)
     graph = tf.Graph()
-    builder = tf.saved_model.builder.SavedModelBuilder('./model')
+    dirName = './model'
+    if os.path.exists(dirName):
+        shutil.rmtree(dirName)
+
+    # normalize X
+    X_array = [1, 1650, 3]
+    X_array[1:3] = (X_array[1:3] - mu) / sigma
+
+    builder = tf.saved_model.builder.SavedModelBuilder(dirName)
     with graph.as_default():
         theta_1 = tf.constant(theta[0], name='theta_1')
         theta_2 = tf.constant(theta[1], name='theta_2')
         theta_3 = tf.constant(theta[2], name='theta_3')
-        x_1 = tf.placeholder(tf.float64, name='x_1')
         x_2 = tf.placeholder(tf.float64, name='x_2')
-
-        h = tf.math.add((theta_1 + theta_2 * x_1), theta_3 * x_2, name='h')
+        x_3 = tf.placeholder(tf.float64, name='x_3')
+        h_x = tf.math.add(theta_1 + theta_2*x_2, theta_3*x_3, name='h_x')
         sess = tf.Session()
         # feed the input to the equation
-        sess.run(h, feed_dict={x_1: 1650, x_2: 3})
+        result = sess.run(h_x, feed_dict={x_2: X_array[1], x_3: X_array[2]})
         builder.add_meta_graph_and_variables(sess, [tf.saved_model.tag_constants.SERVING])
+        # graph generation -> there is some probelm
+        # writer = tf.summary.FileWriter('.')
+        # writer.add_graph(graph)
+        # writer.flush()
         builder.save()
-        # tf.saved_model.save(graph,'./model')
+        return result
 
 
 data = np.loadtxt(os.path.join('C:/Users/hussen/dev/ml-coursera-python-assignments/MLModel', 'data.txt'), delimiter=',')
 X = data[:, :2]
 y = data[:, 2]
 m = y.size
+
 # print out some data points
-print('{:>8s}{:>8s}{:>10s}'.format('X[:,0]', 'X[:, 1]', 'y'))
-print('-'*26)
-for i in range(10):
-    print('{:8.0f}{:8.0f}{:10.0f}'.format(X[i, 0], X[i, 1], y[i]))
+# print('{:>8s}{:>8s}{:>10s}'.format('X[:,0]', 'X[:, 1]', 'y'))
+# print('-'*26)
+# for i in range(10):
+#     print('{:8.0f}{:8.0f}{:10.0f}'.format(X[i, 0], X[i, 1], y[i]))
 
 X_norm, mu, sigma = featureNormalize(X)
-print('Computed mean:', mu)
-print('Computed standard deviation:', sigma)
-
 X = np.concatenate([np.ones((m, 1)), X_norm], axis=1)
 
 alpha = 0.1
@@ -77,5 +82,8 @@ num_iters = 400
 theta = np.zeros(3)
 theta, J_history = gradientDescentMulti(X, y, theta, alpha, num_iters)
 # print(theta)
+# from here model can be
+print('calculated price from the model $', createModel(theta))
+print('predicted price $293081')
 
-createModel(theta)
+
