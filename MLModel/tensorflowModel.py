@@ -4,6 +4,8 @@
 # the model is represented by the equation h(x) = theta_1 +  theta_2.x_2 + theta_3.x_3
 # the goal is to get the thetas hence the model has learned and can be used for predicting new values
 import os
+import shutil
+
 import tensorflow as tf
 # Scientific and vector computation for python
 import numpy as np
@@ -37,8 +39,9 @@ def gradientDescentMulti(X, y, theta, alpha, num_iters):
 
 # test example is -> size = 1650 and rooms = 3 price should be $293081
 def createModel(theta):
-    print(tf.__version__)
     graph = tf.Graph()
+    if os.path.exists('./model'):
+        shutil.rmtree('./model')
     builder = tf.saved_model.builder.SavedModelBuilder('./model')
     with graph.as_default():
         theta_1 = tf.constant(theta[0], name='theta_1')
@@ -47,16 +50,16 @@ def createModel(theta):
         x_1 = tf.placeholder(tf.float64, name='x_1')
         x_2 = tf.placeholder(tf.float64, name='x_2')
 
-        h = tf.math.add((theta_1 + theta_2 * x_1), theta_3 * x_2, name='h')
+        h_x = tf.math.add((theta_1 + theta_2 * x_1), theta_3 * x_2, name='h_x')
         sess = tf.Session()
         # feed the input to the equation
-        sess.run(h, feed_dict={x_1: 1650, x_2: 3})
+        result = sess.run(h_x, feed_dict={x_1: 1650, x_2: 3})
         builder.add_meta_graph_and_variables(sess, [tf.saved_model.tag_constants.SERVING])
         builder.save()
+        return result
         # tf.saved_model.save(graph,'./model')
 
-
-data = np.loadtxt(os.path.join('C:/Users/hussen/dev/ml-coursera-python-assignments/MLModel', 'data.txt'), delimiter=',')
+data = np.loadtxt(os.path.join('/Users/Hesham/dev/ml-coursera-python-assignments/MLModel', 'data.txt'), delimiter=',')
 X = data[:, :2]
 y = data[:, 2]
 m = y.size
@@ -78,4 +81,4 @@ theta = np.zeros(3)
 theta, J_history = gradientDescentMulti(X, y, theta, alpha, num_iters)
 # print(theta)
 
-createModel(theta)
+print(createModel(theta))
