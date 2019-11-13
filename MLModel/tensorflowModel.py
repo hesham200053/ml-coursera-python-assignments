@@ -2,14 +2,15 @@
 # data.txt contains data for training the model with first colums as size and second column as no. bedroom and the
 # last column to be the price
 # the model is represented by the equation h(x) = theta_1 +  theta_2.x_2 + theta_3.x_3
-# the goal is to get the thetas hence the model has learned and can be used for predicting new values
+# the goal is to get the thetas(weights) hence the model has learned and can be used for predicting new values
 import os
 import shutil
 import tensorflow as tf
 # Scientific and vector computation for python
 import numpy as np
 
-
+# execute with command line when problems with tensorflow
+# python3 file.py
 def  featureNormalize(X):
     mu = np.mean(X, axis=0)
     sigma = np.std(X, axis=0)
@@ -37,6 +38,8 @@ def gradientDescentMulti(X, y, theta, alpha, num_iters):
 def createModel(theta):
     print(tf.__version__)
     graph = tf.Graph()
+    if os.path.exists('./model'):
+        shutil.rmtree('./model')
     builder = tf.saved_model.builder.SavedModelBuilder('./model')
     with graph.as_default():
         theta_1 = tf.constant(theta[0], name='theta_1')
@@ -47,7 +50,7 @@ def createModel(theta):
         h_x = tf.math.add(theta_1 + theta_2*x_2, theta_3*x_3, name='h_x')
         sess = tf.Session()
         # feed the input to the equation
-        result = sess.run(h_x, feed_dict={x_2: X_array[1], x_3: X_array[2]})
+        result = sess.run(h_x, feed_dict={x_2: 1650, x_3: 3})
         builder.add_meta_graph_and_variables(sess, [tf.saved_model.tag_constants.SERVING])
         # graph generation -> there is some probelm
         # writer = tf.summary.FileWriter('.')
@@ -56,8 +59,8 @@ def createModel(theta):
         builder.save()
         # tf.saved_model.save(graph,'./model')
 
-# data = np.loadtxt(os.path.join('/Users/Hesham/dev/ml-coursera-python-assignments/MLModel', 'data.txt'), delimiter=',')
-data = np.loadtxt(os.path.join('C:/Users/hussen/dev/ml-coursera-python-assignments/MLModel', 'data.txt'), delimiter=',')
+data = np.loadtxt(os.path.join('/Users/Hesham/dev/ml-coursera-python-assignments/MLModel', 'data.txt'), delimiter=',')
+# data = np.loadtxt(os.path.join('C:/Users/hussen/dev/ml-coursera-python-assignments/MLModel', 'data.txt'), delimiter=',')
 X = data[:, :2]
 y = data[:, 2]
 m = y.size
